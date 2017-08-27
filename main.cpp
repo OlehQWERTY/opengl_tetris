@@ -5,6 +5,7 @@
 #include <stdlib.h>//some string functions
 
 using namespace std;
+//comment just for test
 
 // i - стовпчики (x), n - рядки (y)
 
@@ -292,11 +293,7 @@ void display(void)
 
 
     game_over();
-    /*if(fig_pos_checker(::mov_x, ::mov_y))
-    {
-        ::mov_y++;//y moving
-    }
-*/
+
     DrawField();//draw net function
 
     glPopMatrix();//for all scene

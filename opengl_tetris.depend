@@ -6,3 +6,10 @@
 	<fstream>
 	<stdlib.h>
 
+1503770987 source:/home/oleg/git/opengl_tetris/main.cpp
+	<GL/freeglut.h>
+	<stdio.h>
+	<iostream>
+	<fstream>
+	<stdlib.h>
+
