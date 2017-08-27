@@ -286,7 +286,7 @@ void display(void)
 
 
 
-    score();//проблема
+    //score();//проблема
 
 
 
