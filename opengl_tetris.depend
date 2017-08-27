@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1503770838 source:/home/oleg/Codeblocks/opengl_tetris/main.cpp
+	<GL/freeglut.h>
+	<stdio.h>
+	<iostream>
+	<fstream>
+	<stdlib.h>
+
