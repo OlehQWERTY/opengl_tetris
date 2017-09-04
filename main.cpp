@@ -1,297 +1,243 @@
 /*
-    1) Makes score function to work (it`s work. Just rewrite drawFigure and so on...)
-    2) Dell all global variables and rewrite all functions in more universal way
-    3) Limit for x movement when another figure here
-    4) Save all figures as arrays and rewrite draw function for printing array according to coordinates
-    5) Obj programing
-
-    6) When we transform figure with amount of x bigger than 2 then we get figure with 3 floors along y. It creates some problems.
+avoid colision
 */
 
-
-
-
 #include <GL/freeglut.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <iostream>
-#include <fstream>
+//#include <fstream>
 #include <stdlib.h> // some string functions
+
 
 using namespace std;
 
-// i - column (x), n - row (y)
 
-const int I = 10, N = 10; // Fields amount
-const int Scale = 50; // Fields size
-const int w = Scale * I, h = Scale * N;
-int timer = 100; // Game speed
-int mov_x = 5, mov_x_max = 0, mov_y = 0, type = 0;
-bool figure[4][4], global_field[10][10];
+static int movX = 0, movY = 0, timerSpeed = 400;
 
-
-void init(void)
+bool ** initArr(int x, int y) // init arr[x][y] with false and give memory for this array
 {
-    glClearColor (0.0, 0.0, 0.0, 0.0);
-    glShadeModel (GL_FLAT);
+
+    bool ** ptrArr = new bool* [10];
+    for (int count = 0; count < 10; count++)
+        ptrArr[count] = new bool [10];
+    for (int i = 0; i < x; i++)
+        for (int n = 0; n < y; n++)
+            ptrArr[i][n] = false;
+    return ptrArr;
 }
 
-void drawField() // Drowing of Fields
+void deleteArr(bool ** &ptrArr, int i)
 {
-    glColor3f(1,1,1); // Color of Fields
-    glBegin(GL_LINES);
-    // xy
-    for (int i = 0; i <= w; i += Scale)
-        {glVertex3f(i,0,0); glVertex3f(i,h,0);}
-    for (int n = 0; n <= h; n += Scale)
-        {glVertex3f(0,n,0); glVertex3f(w,n,0);}
-    glEnd();
+    for (int count = 0; count < i; count++)
+        delete [] ptrArr[count];
+
+    cout << "Delete ptrArr[" << i << ']' << endl;
 }
 
-void drawCube(int x, int y, int color)
+void maxXY(bool **arr, int sizeX, int sizeY, int &maxX, int &maxY)
 {
-    if(x >= ::I)
-        cout << "Error 1: Cube X position out of game field!" << endl;
-    else if(y >= ::N)
-        cout << "Error 1: Cube Y position out of game field!" << endl;
-    else
+    int iterrationMaxY = 0;
+    for (int i = 0; i < sizeX; i++)
     {
-        glBegin(GL_POLYGON);
-
-        if(color == 0)
-            glColor3f( 0, 1, 1 );
-        else
-            glColor3f( 1, 0, 1);
-
-        int y_amount_px = ::N * ::Scale;
-        glVertex3f( ::Scale * x, y_amount_px - ::Scale * y, 0.0 );
-        glVertex3f( ::Scale * x, y_amount_px -  ::Scale * (y + 1), 0.0 );
-        glVertex3f( ::Scale * (x + 1), y_amount_px -  ::Scale * (y + 1), 0.0 );
-        glVertex3f( ::Scale * (x + 1), y_amount_px - ::Scale * y, 0.0 );
-
-        glEnd();
+        for (int n = 0; n < sizeY; n++)
+        {
+            if(arr[i][n] == true)
+            {
+                iterrationMaxY++;
+                maxX = i+1;
+            }
+        }
+        cout << "iterrationMaxY = " << iterrationMaxY << endl;
+        if(iterrationMaxY > maxY)
+            maxY = iterrationMaxY;
+        iterrationMaxY = 0;
     }
-
 }
 
-void globalFieldInit()
+bool limitArrInField(bool ** &arr, int sizeX1, int sizeY1, int sizeX2, int sizeY2, int &x, int &y, int maxX, int maxY)
 {
-    for(int i = 0; i < 10; i++)
-        for(int n = 0;n < 10;n++)
-            ::global_field[i][n]=false;
+// arr - inserted arr, sizeX1 & sizeY1 - size of arr, sizeX2 & sizeY2 - size of limittation, x & y - position for inserting arr in limittation
+    if(x + maxX > sizeX2 || y + maxY > sizeY2 || x < 0 || y < 0)
+    {
+        if(x < 0) // if x out of available range this return it in 0 - 10 range
+            x = 0;
+        if(x + maxX >= 10)
+            x = 10 - maxX;
+        cout << "Error. Your array out of main array." << endl;
+        return false;
+    }
+    else
+        ;
+    return true;
 }
 
-void figureInit()
+bool avoidColision()
 {
-    for(int i = 0; i < 4; i++)
-        for(int n = 0;n < 4;n++)
-            ::figure[i][n] = false;
 
 }
 
-void drawFigure(int type)
+void initGameObj(bool ** &ptrArr, int type)
 {
     // cout << "DrawFigure()" << endl;
     switch(type)
     {
         case 0:
-            ::figure[0][0] = true;
-            ::mov_x_max = 0; // how many x`s does this figure include
+            ptrArr[0][0] = true;
             break;
         case 1:
-            ::figure[0][0] = true;
-            ::figure[1][0] = true;
-            ::mov_x_max = 1;
+            ptrArr[0][0] = true;
+            ptrArr[1][0] = true;
             break;
         case 2:
-            ::figure[0][0] = true;
-            ::figure[1][0] = true;
-            ::figure[1][1] = true;
-            ::mov_x_max = 1;
+            ptrArr[0][0] = true;
+            ptrArr[1][0] = true;
+            ptrArr[1][1] = true;
             break;
         case 3:
-            ::figure[0][0] = true;
-            ::figure[1][0] = true;
-            ::figure[2][0] = true;
-            ::mov_x_max = 2;
+            ptrArr[0][0] = true;
+            ptrArr[1][0] = true;
+            ptrArr[2][0] = true;
             break;
         case 4:
-            ::figure[0][0] = true;
-            ::figure[1][0] = true;
-            ::figure[2][0] = true;
-            ::figure[1][1] = true;
-            ::mov_x_max = 2;
+            ptrArr[0][0] = true;
+            ptrArr[1][0] = true;
+            ptrArr[2][0] = true;
+            ptrArr[1][1] = true;
             break;
         case 5:
-            ::figure[0][0] = true;
-            ::figure[1][0] = true;
-            ::figure[2][0] = true;
-            ::figure[3][0] = true;
-            ::mov_x_max = 3;
+            ptrArr[0][0] = true;
+            ptrArr[1][0] = true;
+            ptrArr[2][0] = true;
+            ptrArr[3][0] = true;
             break;
         case 6:
-            ::figure[0][0] = true;
-            ::figure[1][0] = true;
-            ::figure[0][1] = true;
-            ::figure[1][1] = true;
-            ::mov_x_max = 1;
+            ptrArr[0][0] = true;
+            ptrArr[1][0] = true;
+            ptrArr[0][1] = true;
+            ptrArr[1][1] = true;
             break;
     }
 }
 
-void transpFigure()
+void drawGameField(int widthPx, int heightPx, int scale)
 {
-    bool transp[4][4];
-    for(int i = 0; i < 4; i++)
-        for(int n = 0; n < 4; n++)
-            transp[i][n] = ::figure[i][n];
-
-        for(int i = 0; i < 4; i++)
-        {
-            for(int n = 0; n < 4; n++)
-            {
-                figure[i][n] = transp[n][i];
-            }
-        }
-}
-
-
-void addPxToGlobalField(int x, int y)
-{
-    ::global_field[x][y] = true;
-}
-
-void globalFieldShow()
-{
-    int i, n;
-    for(i = 0; i < 10; i++)
-        for(n = 0; n < 10; n++)
-        {
-            //cout << ::figure[i][n] << endl;
-            if(::global_field[i][n] != false)
-                drawCube(i, n, 0);
-        }
-
-}
-
-bool figPosChecker( int x, int y)
-{
-    int i, n;
-    for(i = 0; i < 4; i++)
-        for(n = 0; n < 4; n++)
-            if(::figure[i][n] != false)
-                if(::global_field[x + i][y + n + 1] == true)
-                    return true;
-    return false;
-
-}
-
-void figureShow( int x, int y)
-{
-    int i, n;
-    for(i = 0; i < 4; i++)
-        for(n = 0; n < 4; n++)
-            if(::figure[i][n] != false)
-                   drawCube(x + i, y + n, 1);
-}
-
-void score()
-{
-    unsigned long int testCounter = 0;
-    int o = 0;
-    for(int n = 0; n < 10; n++)
+    glColor3f(1,1,1); // Color of Fields
+    glBegin(GL_LINES);
+    for (int i = 0; i <= widthPx; i += scale)
     {
-        for(int i = 0; i < 10; i++)
-            if(::global_field[i][n] == true)
-            {
-                cout << testCounter << endl;
-                o++;
-                if(o >= 9)
-                    cout << "full row: " << n << endl;
-                    /*for(int n1 = n - 1; n1 > 0; n1--)
-                        for(int i1 = 0; i1 < 10; i1++)
-                        {
-                            ::global_field[i1][n1] = ::global_field[i1][n1 + 1];
-                            //::global_field[i1][n] = false;
-                        }*/
-            }
-        o = 0;
+        glVertex2i(i, 0);
+        glVertex2i(i, heightPx);
     }
-    cout << "score()" << endl;
+    for (int n = 0; n <= heightPx; n += scale)
+    {
+        glVertex2i(0, n);
+        glVertex2i(widthPx, n);
+    }
+    glEnd();
 }
 
-void moving()
+void drawCube(int x, int y, int color, int scale)
 {
-    globalFieldShow(); // old figures
-    figureShow(::mov_x, ::mov_y); // current moving figure
-    ::mov_y++; // y moving
+    glBegin(GL_POLYGON);
+    switch(color)
+    {
+        case 0:
+            glColor3f(0, 1, 1 );
+            break;
+        case 1:
+            glColor3f(1, 0, 1);
+            break;
+        case 2:
+            glColor3f(0, 0, 1);
+            break;
+        default:
+            glColor3f(0.5, 0.5, 0.5);
+            break;
+    }
+
+    glVertex2i(scale * x, y * scale);
+    glVertex2i(scale * x, (y + 1) * scale);
+    glVertex2i(scale * (x + 1), (y + 1) * scale);
+    glVertex2i(scale * (x + 1), y * scale);
+
+    glEnd();
+
 }
 
-void gameOver()
+void insertArrToArr(bool ** &arr, bool ** &arr2, int sizeX1, int sizeY1, int sizeX2, int sizeY2, int x, int y)
 {
-    for(int i = 0; i < 10; i++)
-        if(::global_field[i][1] == true)
-        {
-            cout << "Game over! Press, any key to continue!" << endl;
-            for(int i = 0; i < 10; i++) // erase of ::global_field
-                for(int n = 0; n < 10; n++)
-                    ::global_field[i][n] = true;
-        }
+// arr - bigger arr, arr2 - inserted arr, sizeX1 & sizeY1 - size of arr, sizeX2 & sizeY2 - size of arr2, x & y - position for inserting arr2 in arr
+    for (int i = 0; i < sizeX1; i++)
+        for (int n = 0; n < sizeY1; n++)
+            if(arr2[i][n] == true)
+                if(x + i < sizeX1 || y + n < sizeY1)
+                    arr[x+i][y+n] = true;
+                else
+                    cout << "Error. Your array out of main array." << endl;
+}
+
+
+void printArrOpenGl(bool **arr, int scale, int color, int sizeX, int sizeY, int x, int y)
+{
+    for (int i = 0; i < sizeX; i++)
+        for (int n = 0; n < sizeY; n++)
+            if(arr[i][n] == true)
+                drawCube(i + x, n + y, color, scale);
+}
+
+void gameDisplay()
+{
+    bool ** gameFieldArr = initArr(10, 10);
+    bool ** gameObjArr = initArr(4, 4);
+    initGameObj(gameObjArr, 5);
+    int maxX = 0, maxY = 0;
+    maxXY(gameObjArr, 4, 4, maxX, maxY);
+    cout << "maxX = " << maxX << endl;
+    cout << "maxY = " << maxY << endl;
+    static int color = 0;
+    if(::movY >= 10) // moving object along y axis
+    {
+        ::movY = 0;
+        ::movX = rand() % (10 - maxX + 1); // random spawn in x range according to x size of figure
+        color = rand() % 3;
+    }
+
+    cout << "X = " << movX << endl;
+    cout << "Y = " << movY << endl;
+
+    limitArrInField(gameObjArr, 4, 4, 10, 10, ::movX, ::movY, maxX, maxY);
+    printArrOpenGl(gameObjArr, 50, color, 4, 4, ::movX, ::movY);
+    ::movY++; // moving object along y axis
+
+    drawGameField(500, 500, 50);
+
+    deleteArr(gameFieldArr, 10);
+    deleteArr(gameObjArr, 4);
 }
 
 void display(void)
 {
     glClear(GL_COLOR_BUFFER_BIT);
     glPushMatrix(); // for all scene
-    int r_x = 0 + ::Scale;
-    int r_y = 0 + ::Scale;
+    int scale = 50; // *************************** change this func
+    int r_x = 0 + scale;
+    int r_y = 0 + scale;
     int r_z = 0;
     glTranslatef(r_x, r_y, r_z);//transform scene possition x y z
-    //glRotatef(::x, 1.0, 0.0, 0.0);//full scene rotation
-    //glRotatef(::y, 0.0, 1.0, 0.0);//full scene rotation
-    //glRotatef(::z, 0.0, 0.0, 1.0);//full scene rotation
-    //glTranslatef(-1 * r_x, -1 * r_y, -1 * r_z);//rotate round point x y z
+
+    gameDisplay();
 
 
-    int max_y_iterator = 9;//max possible amount of y (number y-1 because counting beine from 0)
-    if(::type == 2 || ::type == 4 || ::type == 6)//two floor figures
-        max_y_iterator = 8;
-
-    if(::mov_y >= max_y_iterator || figPosChecker(::mov_x, ::mov_y))
-    {
-        //write figure to global_field array
-        int i, n;
-        for(i = 0; i < 4; i++)
-            for(n = 0; n < 4; n++)
-            {
-                //cout<< ::figure[i][n] <<endl;
-                if(::figure[i][n] != false)
-                    addPxToGlobalField(::mov_x + i, ::mov_y + n );
-            }
-
-        ::mov_x = rand() % (10 - mov_x_max); // random spawn in x range according to x size of figure
-        ::mov_y = 0; // moving from top to the bottom
-        ::type = rand() % 7; // 6 possible figures from 0 to 6
-        // cout << "::mov_y >=10"<< endl;
-        // creation of new figure
-        figureInit();
-        drawFigure(::type); // init figure array with figure number(::type)
-    }
-    moving(); // move along y and recall figure and global_field show functions
-
-    score(); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! problem
-
-    gameOver();
-    drawField(); // draw net function
     glPopMatrix(); // for all scene
     glutSwapBuffers();
 }
 
-void reshape(int w, int h)
+void reshape(int widthPx, int heightPx)
 {
-    glViewport (0, 0, (GLsizei) w, (GLsizei) h);
+    glViewport (0, 0, widthPx, heightPx);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(-1 * ::Scale, w + ::Scale, -1 * ::Scale, h + ::Scale, -1.0, 1.0);// x range; y range; z range
+    gluOrtho2D(-50, widthPx + 50, -50, heightPx + 50);// x range; y range
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -304,25 +250,25 @@ void key(unsigned char key, int x, int y)//change x, y, z for full scene rotatin
     switch(key)
     {
         case 97: // a
-             ::mov_x--; // moving of the current figure along x
+             ::movX--; // moving of the current figure along x
             break;
         case 100: // d
-            ::mov_x++; // moving of the current figure along x
+            ::movX++; // moving of the current figure along x
             break;
-        case 32: // space
-            transpFigure(); // transformation of mooving figure
-            break;
+        //case 32: // space
+            //transpFigure(); // transformation of mooving figure
+            //break;
         case 43: // +
-            ::timer -= 100; // game speed changing
+            ::timerSpeed -= 100; // game speed changing
             break;
         case 45: // -
-            ::timer += 100; // game speed changing
+            ::timerSpeed += 100; // game speed changing
             break;
-        case 121: // y
+        /*case 121: // y
             globalFieldInit();
             for(int i = 0; i < 100; i++) // erase console output
                 cout << endl;
-            break;
+            break;*/
     }
 
 }
@@ -330,39 +276,40 @@ void key(unsigned char key, int x, int y)//change x, y, z for full scene rotatin
 
 void timf(int value) // Timer function
 {
-    // x limitation
-    if(::mov_x > 10 - ::mov_x_max)
-        ::mov_x = 9 - ::mov_x_max;
-    if(::mov_x <= 0)
-        ::mov_x = 0;
+
     // game speed limitation
-    if(::timer >= 1000) // min
-        ::timer = 1000;
-    if(::timer <= 100) // max
-        ::timer = 100;
+    if(::timerSpeed >= 1000) // min
+        ::timerSpeed = 1000;
+    if(::timerSpeed <= 100) // max
+        ::timerSpeed = 100;
 
     display();
-    glutTimerFunc(::timer, timf, 0); // Setup next timer
+    glutTimerFunc(::timerSpeed, timf, 0); // Setup next timer
 }
 
+void init(void)
+{
+    glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
+    int widthPx = 600, heightPx = 600, scale = 50;
+    glutInitWindowSize (widthPx, heightPx);
+    glutInitWindowPosition (1366/2 - widthPx/2 - scale, 250); // y = 250 for making appeared window in the middle of 1366 * 768 screen
+    glutCreateWindow ("Tetris");
+    glClearColor (0.0, 0.0, 0.0, 0.0);
+    glShadeModel (GL_FLAT);
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
+    glutTimerFunc(::timerSpeed, timf, 0); // timer
+    glutKeyboardFunc(key); // key function
+    glutMainLoop();
+}
 
 int main(int argc, char** argv)
 {
     // one time used functions
-    globalFieldInit(); // init arr for saving position of used figures
     srand(time(NULL)); // random number generator //
     // glut
     glutInit(&argc, argv);
-    glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowSize (::w + 2 * ::Scale, ::h + 2 * ::Scale);
-    glutInitWindowPosition (1366/2 - ::w/2 - ::Scale, 250); // y = 250 for making appeared window in the middle of 1366 * 768 screen
-    glutCreateWindow ("Tetris");
-    init ();
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
-    glutTimerFunc(::timer, timf, 0); // timer
-    glutKeyboardFunc(key); // key function
-    glutMainLoop();
+    init();
 
     return 0;
 }
